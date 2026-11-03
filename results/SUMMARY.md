@@ -20,3 +20,15 @@ Tried on the selection folds and rejected (all below rf_base 0.98659 unless note
 rich signal features 0.98559; venue distances 0.98590; ticket details 0.98528; latest-season
 categories with CatBoost 0.98337; CatBoost base 0.98439; ExtraTrees 0.98551; pooled-season
 training RF 0.98658 / 0.98478 (fixed folds); history-transfer score 0.98623; monotone HGB 0.98508.
+
+Later attempts (selection folds):
+- cnn_flat (CNN with the 44-column flat summary in the dense branch, 5 seeds): 0.98235 vs cnn_pre 0.98191;
+  ensemble with it 0.98743 vs 0.98739: no gain.
+- nested group-aware stacking (logistic meta-model on member ranks x buyer group), fixed42:
+  0.98575 vs equal-rank 0.98805: overfits, rejected.
+
+Final files (outputs/final, frozen before inference; raw-table feature parity check passed):
+- submissions/season_signal_v1.csv = ens_final, sha256 6146980986…; test rank corr with the previous
+  best submission 0.799 (development OOF 0.808 / 0.821).
+- submissions/season_signal_hybrid_v1.csv = 0.5 rank(ens_final) + 0.5 rank(previous best
+  half_snapshot_best_v1), sha256 ee829ca5e0…; fixed-fold CV 0.98916 / 0.98712.
