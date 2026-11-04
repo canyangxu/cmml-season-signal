@@ -6,8 +6,9 @@ train nor test, no labels) to data/isolated/.  Nothing about the test accounts i
 written, counted beyond their number, or passed on.  Modelling code reads only
 data/isolated/ (see src/data.py).
 
-    python -I src/isolate.py
+    python -I src/isolate.py [--out data/isolated]
 """
+import argparse
 import hashlib
 import json
 import sys
@@ -30,9 +31,9 @@ def read(name):
     raise ValueError('Undecodable ' + name)
 
 
-def main():
+def main(OUT):
     if OUT.exists():
-        sys.exit('data/isolated already exists; delete it deliberately to rebuild')
+        sys.exit(f'{OUT} already exists; delete it deliberately to rebuild')
     train = read('train.csv')
     sealed = set(read('test.csv')['ID'])  # identity column only, for exclusion
     accounts, subs, tickets = read('account.csv'), read('subscriptions.csv'), read('tickets_all.csv')
@@ -60,4 +61,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--out', default=str(OUT))
+    main(Path(p.parse_args().out))

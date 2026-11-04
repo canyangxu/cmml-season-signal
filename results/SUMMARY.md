@@ -139,3 +139,16 @@ Grading: 70 points if mean(public, private) > 0.97. Final file: **season_signal_
 Full marks need private > 0.96717. With fold-level sd ~0.004: P(full) = 0.93 if the private half is
 as hard as the public half (mean 0.973), 0.997 at 0.978, ~1.0 at the CV level. smooth_gam_v1 must not be
 selected (it would need private > 0.98191). Research stopped here.
+
+## Repository clean-up and reproduction check (2026-11-04)
+
+- `src/` now holds only the final pipeline (isolate, pretrain, train, predict); all exploratory scripts
+  moved to `experiments/` (index in `experiments/README.md`), fold scores to `results/fold_metrics/`.
+- Re-running isolation and pretraining reproduces `data/isolated` and the pretrained trunk byte for byte.
+- `src/predict.py` on the original v2 model files reproduces the submitted `season_signal_v2.csv` byte
+  for byte (sha256 20a26de7...).
+- A full retrain reproduces every tree / linear member exactly; the CNN head initialisation was unseeded
+  in the original run (PyTorch's default generator is seeded per process). It is seeded now: two retrains
+  give byte-identical submissions (sha256 1a14bcec...), rank correlation 0.99996 with the submitted file.
+- Recorded for completeness: greedy weight search chose 3 RF : 1 CatBoost : 1 HGB_cat (selection 0.98853,
+  confirmation 0.98843 vs 0.98861 for the declared weights; not adopted).

@@ -6,8 +6,9 @@ input is its season signal for seasons before t (right-aligned) and the target i
 whether it subscribed in season t.  Only history records are used: no 2014-15 label,
 no donation snapshot.  The fitted trunk initialises the 2014 fine-tuning model.
 
-    python -I src/pretrain.py
+    python -I src/pretrain.py [--out outputs/pretrain]
 """
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -40,7 +41,7 @@ def panel(sig, stat):
     return np.concatenate(xs), np.concatenate(ss).astype(np.float32), np.concatenate(ys), np.concatenate(accounts)
 
 
-def main():
+def main(OUT):
     OUT.mkdir(parents=True, exist_ok=True)
     c = load()
     accounts = pd.concat([c.dev_accounts, c.source_accounts])
@@ -66,4 +67,6 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    p = argparse.ArgumentParser()
+    p.add_argument('--out', default=str(OUT))
+    main(Path(p.parse_args().out))
