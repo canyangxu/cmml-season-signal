@@ -303,3 +303,15 @@ def base_roll(d):
 
 
 FEATURE_SETS['base_roll'] = base_roll
+
+
+ADDRESS = ('venue_km_min', 'venue_km_sf', 'venue_km_berkeley', 'in_california', 'zip3', 'state')
+
+
+def allview_noaddr(d):
+    """allview without geography: no venue distances, California flag, ZIP3 or state."""
+    av = allview(d)
+    return av.drop(columns=[c for c in ADDRESS if c in av.columns])
+
+
+FEATURE_SETS['allview_noaddr'] = allview_noaddr

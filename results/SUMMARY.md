@@ -131,3 +131,11 @@ Files: smooth_gam_v1.csv (613f803e…), smooth_trio_v1.csv (9866fffb…), season
 hypothesis is rejected: the GAM keeps its CV (0.98668 / 0.98679) but loses 0.029 on the public half,
 the largest gap of all 15 submissions. With ~71 public buyers one buyer moved to the bottom costs
 ~0.014, so a few extrapolated accounts (linear spline tails, one-hot categories) are enough.
+
+## Final selection (2026-11-04)
+
+Grading: 70 points if mean(public, private) > 0.97. Final file: **season_signal_v2.csv** (public
+0.97283, the highest of all 15 submissions; best confirmed CV among submitted files, 0.98861).
+Full marks need private > 0.96717. With fold-level sd ~0.004: P(full) = 0.93 if the private half is
+as hard as the public half (mean 0.973), 0.997 at 0.978, ~1.0 at the CV level. smooth_gam_v1 must not be
+selected (it would need private > 0.98191). Research stopped here.
