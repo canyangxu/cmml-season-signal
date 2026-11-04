@@ -51,3 +51,10 @@ On the previous project's fixed folds the new ensemble alone beats its best (0.9
 
 Final file: submissions/season_signal_v2.csv (outputs/final2, frozen before inference; raw-table parity
 check passed), sha256 20a26de718…; test rank correlation with the previous best submission 0.884.
+
+## Kaggle public result
+
+season_signal_v2.csv: public **0.97283** (previous best submission four_family_v1 0.97279; 13 submissions
+in total now range 0.960-0.9728). The confirmed CV gain (+0.0007 to +0.0011) shows up on the public half
+only as +0.00004, consistent with the earlier finding that the public half is dominated by a few buyers
+that no model trained on these data ranks well.
