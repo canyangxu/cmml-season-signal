@@ -32,3 +32,22 @@ Final files (outputs/final, frozen before inference; raw-table feature parity ch
   best submission 0.799 (development OOF 0.808 / 0.821).
 - submissions/season_signal_hybrid_v1.csv = 0.5 rank(ens_final) + 0.5 rank(previous best
   half_snapshot_best_v1), sha256 ee829ca5e0…; fixed-fold CV 0.98916 / 0.98712.
+
+## Round 3: detail-view boosting members (fold-level AUROC)
+
+| ensemble | selection 25 folds | confirmation 25 folds |
+|---|---:|---:|
+| ens_final (3 RF_t + CNN + LR + HGB) | 0.98739 | 0.98754 |
+| + CatBoost depth 4 on allview (91 cols, native categories) | 0.98794 | 0.98798 |
+| + HGB with native categories on allview | 0.98818 | 0.98836 |
+| **final2** = (3 x E + CatBoost d3 + HGB_cat) / 5, E with LR on allview | **0.98847** | **0.98861** (20/25 folds above ens_final) |
+
+Members (selection / confirmation): CatBoost d4 0.98561 / 0.98547; CatBoost d3 (2000 it, lr 0.03)
+0.98620 / 0.98538; CatBoost d4 3-seed bag 0.98653 / -; HGB_cat 0.98395 / 0.98495; LR allview (C=0.03)
+0.98365 / 0.98476. Rejected: RF on allview 0.98635 (no ensemble gain); nested stacking.
+
+On the previous project's fixed folds the new ensemble alone beats its best (0.98917 vs 0.98848;
+0.98700 vs 0.98630).
+
+Final file: submissions/season_signal_v2.csv (outputs/final2, frozen before inference; raw-table parity
+check passed), sha256 20a26de718…; test rank correlation with the previous best submission 0.884.

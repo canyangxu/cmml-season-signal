@@ -53,9 +53,34 @@ def model(kind, seed):
         lr, leaves, it = {'hgbmono': (0.05, 15, 300), 'hgbmono_slow': (0.02, 15, 900), 'hgbmono_small': (0.03, 7, 700)}[kind]
         return HistGradientBoostingClassifier(learning_rate=lr, max_iter=it, max_leaf_nodes=leaves, l2_regularization=1.0,
                                               min_samples_leaf=20, random_state=seed, monotonic_cst=MONO)
-    if kind == 'cat':
+    if kind in ('hgbcat', 'hgbcat_slow'):
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        lr, it = (0.05, 300) if kind == 'hgbcat' else (0.02, 900)
+        return HistGradientBoostingClassifier(learning_rate=lr, max_iter=it, max_leaf_nodes=15, l2_regularization=1.0,
+                                              min_samples_leaf=20, categorical_features='from_dtype', random_state=seed)
+    if kind.startswith('lrall'):
+        from sklearn.compose import make_column_transformer, make_column_selector
+        from sklearn.impute import SimpleImputer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import OneHotEncoder, StandardScaler
+        C = {'lrall': 0.1, 'lrall_c03': 0.3, 'lrall_c003': 0.03}[kind]
+        pre = make_column_transformer(
+            (make_pipeline(SimpleImputer(strategy='median', add_indicator=True), StandardScaler()), make_column_selector(dtype_include='number')),
+            (OneHotEncoder(handle_unknown='ignore', min_frequency=20), make_column_selector(dtype_include=object)))
+        return make_pipeline(pre, LogisticRegression(C=C, max_iter=10000))
+    if kind == 'cat_d3slow':
         from catboost import CatBoostClassifier
-        return CatBoostClassifier(iterations=1000, depth=5, learning_rate=0.04, l2_leaf_reg=5.0, random_seed=seed,
+        return CatBoostClassifier(iterations=2000, depth=3, learning_rate=0.03, l2_leaf_reg=5.0, random_seed=seed,
+                                  thread_count=5, verbose=False, allow_writing_files=False)
+    if kind == 'cat_d4bag':  # three seeds averaged inside one estimator call (see evaluate)
+        from catboost import CatBoostClassifier
+        return [CatBoostClassifier(iterations=1000, depth=4, learning_rate=0.04, l2_leaf_reg=5.0, random_seed=100*seed + k,
+                                   thread_count=5, verbose=False, allow_writing_files=False) for k in range(3)]
+    if kind in ('cat', 'cat_d4', 'cat_d6'):
+        from catboost import CatBoostClassifier
+        depth = {'cat': 5, 'cat_d4': 4, 'cat_d6': 6}[kind]
+        return CatBoostClassifier(iterations=1000, depth=depth, learning_rate=0.04, l2_leaf_reg=5.0, random_seed=seed,
                                   thread_count=8, verbose=False, allow_writing_files=False)
     raise ValueError(kind)
 
@@ -64,6 +89,15 @@ def evaluate(kind, feature_set, schemes, data):
     global MONO
     ids, y, tab = data['ids'], data['y'], FEATURE_SETS[feature_set](data)
     MONO = [1 if c in INCREASING else -1 if c in DECREASING else 0 for c in tab.columns]
+    if kind.startswith('rfg_') and any(tab[c].dtype == object for c in tab.columns):
+        tab = tab.copy()
+        for c in [c for c in tab.columns if tab[c].dtype == object]:
+            tab[c] = tab[c].astype('category').cat.codes  # ordinal codes for the forest
+    if kind.startswith('hgbcat'):
+        tab = tab.copy()
+        for c in [c for c in tab.columns if tab[c].dtype == object]:
+            counts = tab[c].value_counts()  # label-free: pool rare values so every column has < 255 levels
+            tab[c] = tab[c].where(tab[c].map(counts) >= 10, 'rare').astype('category')
     res, oofs = {}, {}
     for scheme in schemes:
         fold = folds(scheme, ids, y)
@@ -71,7 +105,12 @@ def evaluate(kind, feature_set, schemes, data):
         for f in range(1, 6):
             tr, va = fold != f, fold == f
             m = model(kind, f)
-            if kind == 'cat':
+            if isinstance(m, list):
+                cats = [c for c in tab.columns if tab[c].dtype == object]
+                oof[va] = np.mean([pd.Series(e.fit(tab[tr], y[tr], cat_features=cats).predict_proba(tab[va])[:, 1]).rank(pct=True)
+                                   for e in m], axis=0)
+                continue
+            if kind.startswith('cat'):
                 cats = [c for c in tab.columns if tab[c].dtype == object]
                 m.fit(tab[tr], y[tr], cat_features=cats)
             else:

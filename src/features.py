@@ -143,3 +143,22 @@ def base_panel(d):
 
 
 FEATURE_SETS['base_panel'] = base_panel
+
+
+def allview(d):
+    """Everything: rich signal summary + venue distances + ticket details (numeric) + categorical
+    latest-season details, identifier batch prefix, ZIP3 and state (for boosting with native categories)."""
+    num = rich(d).reset_index(drop=True)
+    g, t = geo(d).reset_index(drop=True), tix(d).reset_index(drop=True)
+    num = pd.concat([num, g[[c for c in g if c not in num]], t[[c for c in t if c not in num]]], axis=1)
+    cats = latest_categories(d).reset_index(drop=True)
+    a = d['corpus'].dev_accounts.set_index('account.id').reindex(d['ids'])
+    zip5 = a['billing.zip.code'].fillna(a['shipping.zip.code']).fillna('none').str[:5]
+    _, _, state = _zip_coords(d)
+    cats['crm_prefix'] = [i[:11] for i in d['ids']]
+    cats['zip3'] = zip5.str[:3].to_numpy()
+    cats['state'] = pd.Series(state).fillna('none').astype(str).to_numpy()
+    return pd.concat([num, cats], axis=1)
+
+
+FEATURE_SETS['allview'] = allview
