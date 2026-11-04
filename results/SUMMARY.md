@@ -91,7 +91,7 @@ bag member (boosting) or per mini-batch (CNN). Each row: member alone / v3 with 
 |---|---:|---:|---:|---:|---:|---:|---:|
 | RF_t (1500 trees) | 0.98702 / 0.98860 | 0.98670 / 0.98860 | 0.98624 / 0.98851 | 0.98641 / 0.98869 | 0.98687 / 0.98867 | 0.98601 / 0.98851 | 0.98240 / 0.98775 |
 | CNN (3 seeds; clean inner early stopping) | 0.98217 / 0.98865 | - | 0.98227 / 0.98866 | - | - | - | - |
-| HGB_cat (5-bag, clean early stopping) | 0.98513 / 0.98836 | - | 0.98189 / 0.98797 | - | see below | - | - |
+| HGB_cat (5-bag, clean early stopping) | 0.98513 / 0.98836 | - | 0.98189 / 0.98797 | - | 0.97986 / 0.98783 | - | - |
 | CatBoost d3 (5-bag, clean early stopping) | 0.98647 / 0.98850 | - | 0.98476 / 0.98839 | - | 0.98367 (fixed folds only, vs 0.98617) | - | - |
 
 No variant moves v3 by more than +0.00006 (fold-level sd ~0.005); noise is rejected.
