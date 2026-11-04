@@ -30,6 +30,9 @@ INCREASING = ('sub_seasons', 'sub_last3', 'sub_2013', 'sub_2012', 'sub_streak', 
               'don_lifetime', 'don_count', 'first_donated_2014', 'sub_seats_2013', 'sub_full_2013')
 DECREASING = ('sub_recency', 'tk_recency')
 MONO = None  # set per feature table in evaluate()
+import os
+DEVICE = os.environ.get('TABPFN_DEVICE', 'cpu')
+SMOOTH = float(os.environ.get('LABEL_SMOOTH', '0.1'))
 
 
 def model(kind, seed):
@@ -53,6 +56,10 @@ def model(kind, seed):
         lr, leaves, it = {'hgbmono': (0.05, 15, 300), 'hgbmono_slow': (0.02, 15, 900), 'hgbmono_small': (0.03, 7, 700)}[kind]
         return HistGradientBoostingClassifier(learning_rate=lr, max_iter=it, max_leaf_nodes=leaves, l2_regularization=1.0,
                                               min_samples_leaf=20, random_state=seed, monotonic_cst=MONO)
+    if kind == 'hgbcat_reg':
+        from sklearn.ensemble import HistGradientBoostingClassifier
+        return HistGradientBoostingClassifier(learning_rate=0.03, max_iter=600, max_leaf_nodes=7, l2_regularization=5.0,
+                                              min_samples_leaf=40, categorical_features='from_dtype', random_state=seed)
     if kind in ('hgbcat', 'hgbcat_slow'):
         from sklearn.ensemble import HistGradientBoostingClassifier
         lr, it = (0.05, 300) if kind == 'hgbcat' else (0.02, 900)
@@ -69,6 +76,35 @@ def model(kind, seed):
             (make_pipeline(SimpleImputer(strategy='median', add_indicator=True), StandardScaler()), make_column_selector(dtype_include='number')),
             (OneHotEncoder(handle_unknown='ignore', min_frequency=20), make_column_selector(dtype_include=object)))
         return make_pipeline(pre, LogisticRegression(C=C, max_iter=10000))
+    if kind == 'xgb':
+        from xgboost import XGBClassifier
+        return XGBClassifier(n_estimators=600, learning_rate=0.03, max_depth=4, subsample=0.8, colsample_bytree=0.6,
+                             min_child_weight=3, reg_lambda=2.0, eval_metric='auc', n_jobs=8, random_state=seed)
+    if kind == 'xgb_slow':
+        from xgboost import XGBClassifier
+        return XGBClassifier(n_estimators=1200, learning_rate=0.015, max_depth=3, subsample=0.8, colsample_bytree=0.5,
+                             min_child_weight=5, reg_lambda=5.0, eval_metric='auc', n_jobs=6, random_state=seed)
+    if kind in ('lgbm_reg', 'lgbm_smooth'):
+        from lightgbm import LGBMClassifier, LGBMRegressor
+        params = dict(n_estimators=1200, learning_rate=0.02, num_leaves=7, min_child_samples=40, subsample=0.8, subsample_freq=1,
+                      colsample_bytree=0.5, reg_lambda=10.0, n_jobs=8, random_state=seed, verbose=-1)
+        return LGBMClassifier(**params) if kind == 'lgbm_reg' else LGBMRegressor(objective='cross_entropy', **params)
+    if kind == 'xgb_smooth':
+        from xgboost import XGBRegressor
+        return XGBRegressor(objective='binary:logistic', n_estimators=1200, learning_rate=0.015, max_depth=3, subsample=0.8,
+                            colsample_bytree=0.5, min_child_weight=5, reg_lambda=5.0, n_jobs=6, random_state=seed)
+    if kind == 'lgbm':
+        from lightgbm import LGBMClassifier
+        return LGBMClassifier(n_estimators=600, learning_rate=0.03, num_leaves=15, min_child_samples=20, subsample=0.8,
+                              subsample_freq=1, colsample_bytree=0.6, reg_lambda=2.0, n_jobs=8, random_state=seed, verbose=-1)
+    if kind.startswith('ebm'):
+        from interpret.glassbox import ExplainableBoostingClassifier
+        inter = {'ebm': 10, 'ebm0': 0}[kind]
+        return ExplainableBoostingClassifier(interactions=inter, outer_bags=8, n_jobs=4, random_state=seed)
+    if kind.startswith('tabpfn'):
+        from tabpfn import TabPFNClassifier
+        n = {'tabpfn': 4, 'tabpfn8': 8}[kind]
+        return TabPFNClassifier(device=DEVICE, n_estimators=n, random_state=seed, ignore_pretraining_limits=True)
     if kind == 'cat_d3slow':
         from catboost import CatBoostClassifier
         return CatBoostClassifier(iterations=2000, depth=3, learning_rate=0.03, l2_leaf_reg=5.0, random_seed=seed,
@@ -109,6 +145,10 @@ def evaluate(kind, feature_set, schemes, data):
                 cats = [c for c in tab.columns if tab[c].dtype == object]
                 oof[va] = np.mean([pd.Series(e.fit(tab[tr], y[tr], cat_features=cats).predict_proba(tab[va])[:, 1]).rank(pct=True)
                                    for e in m], axis=0)
+                continue
+            if kind.endswith('_smooth'):  # label smoothing: y' = y(1-eps) + eps/2, fitted with a logistic loss
+                m.fit(tab[tr], y[tr]*(1 - SMOOTH) + SMOOTH/2)
+                oof[va] = m.predict(tab[va])
                 continue
             if kind.startswith('cat'):
                 cats = [c for c in tab.columns if tab[c].dtype == object]

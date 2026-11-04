@@ -36,3 +36,14 @@ Each account's history is treated like a multi-lead ECG: 21 seasons (1993-2013) 
 | `src/cv.py` | fine-tuned CNN (3 seeds), scratch CNN, LR, RF, HGB and declared ensembles |
 | `src/iterate.py`, `src/features.py` | fast tabular iteration harness and feature views |
 | `src/panel_cv.py` | pooled-season training (history rows + 2014 rows) |
+| `src/cnn_variants.py`, `src/ecg_fusion.py` | CNN variants: flat dense branch; three ECG-style subnetworks (dilated / GeM / multi-kernel) fused |
+| `src/stack.py`, `src/hillclimb.py` | nested group-aware stacking and weight search (both overfit; kept as evidence) |
+| `src/churn_expert.py` | renewal specialist trained on historical renewal decisions |
+| `src/noise.py`, `src/noise_swap.py` | label-noise training (output flipping / smearing) with clean-label early stopping and scoring; swaps into v3 |
+| `src/final.py`, `src/final2.py` | frozen final stages (v1, v2): fit on all development accounts, freeze, then infer |
+
+## Results
+
+All results, including failed attempts, are in `results/SUMMARY.md`. Submitted:
+`season_signal_v2.csv` (`src/final2.py`), public 0.97283; 25 selection folds 0.98847,
+25 confirmation folds 0.98861.
