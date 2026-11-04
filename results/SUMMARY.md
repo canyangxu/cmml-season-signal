@@ -126,3 +126,8 @@ agreement matches development, so inference is consistent. Frozen in outputs/fin
 reused after artifact sha256 verification; raw-table parity checks for all four files and for v2).
 Files: smooth_gam_v1.csv (613f803e…), smooth_trio_v1.csv (9866fffb…), season_signal_v3.csv
 (cf5de04f…), v3_gam25_v1.csv (77982ce5…).
+
+**Public result:** smooth_gam_v1.csv scored **0.95809** on the public board (v2 0.97283). The smooth-model
+hypothesis is rejected: the GAM keeps its CV (0.98668 / 0.98679) but loses 0.029 on the public half,
+the largest gap of all 15 submissions. With ~71 public buyers one buyer moved to the bottom costs
+~0.014, so a few extrapolated accounts (linear spline tails, one-hot categories) are enough.
