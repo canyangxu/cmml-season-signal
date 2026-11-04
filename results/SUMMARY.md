@@ -106,3 +106,23 @@ Why it cannot help here:
 - Clean-label early stopping itself helps single boosting members (HGB_cat 0.98415 -> 0.98513 with a
   median of 91 instead of 300 iterations; CatBoost 0.98620 -> 0.98647), but the stopped members are
   smoother and closer to RF, so the ensemble loses diversity (0.98836 / 0.98850 < 0.98863).
+
+## Round 6: smooth additive models (public-board hypothesis)
+
+All 14 earlier submissions (old and new repo) were tree-heavy and land at public 0.970-0.9728 whatever
+their CV; a classmate's public repo reports a C = 0.03 logistic regression (CV 0.9786) at public
+0.97370, above that classmate's own tree ensemble (CV 0.9780, public 0.97198). Hypothesis: smooth
+additive models transfer to the test accounts better than tree interactions.
+
+| model (allview_new) | selection 25 folds | confirmation 25 folds |
+|---|---:|---:|
+| LR C = 0.1 / 0.03 / 0.01 / 0.003 | 0.98430 / 0.98562 / **0.98606** / 0.98430 | - |
+| spline GAM (cubic, 5 uniform knots per numeric feature), C = 0.01 / 0.003 / 0.001 / 0.0003 | 0.98457 / **0.98668** / 0.98652 / 0.98414 | 0.98679 (C = 0.003) |
+| GAM + LR(0.01) + CNN (all smooth) | 0.98702 | - |
+| 0.25 GAM + 0.75 v3 | 0.98875 (17/25 folds above v3) | - |
+
+GAM vs v3 rank correlation: 0.898 on development OOF, 0.896 on test (v2 file); the test-side
+agreement matches development, so inference is consistent. Frozen in outputs/final3 (v2 members
+reused after artifact sha256 verification; raw-table parity checks for all four files and for v2).
+Files: smooth_gam_v1.csv (613f803e…), smooth_trio_v1.csv (9866fffb…), season_signal_v3.csv
+(cf5de04f…), v3_gam25_v1.csv (77982ce5…).

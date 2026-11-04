@@ -65,6 +65,29 @@ def model(kind, seed):
         lr, it = (0.05, 300) if kind == 'hgbcat' else (0.02, 900)
         return HistGradientBoostingClassifier(learning_rate=lr, max_iter=it, max_leaf_nodes=15, l2_regularization=1.0,
                                               min_samples_leaf=20, categorical_features='from_dtype', random_state=seed)
+    if kind.startswith('gam_'):  # additive smooth model: cubic splines per numeric feature + one-hot categories, L2 logistic
+        from sklearn.compose import make_column_transformer, make_column_selector
+        from sklearn.impute import SimpleImputer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import OneHotEncoder, SplineTransformer, StandardScaler
+        C = {'gam_c001': 0.01, 'gam_c003': 0.03, 'gam_c01': 0.1, 'gam_c0003': 0.003, 'gam_c0001': 0.001, 'gam_c00003': 0.0003}[kind]
+        pre = make_column_transformer(
+            (make_pipeline(SimpleImputer(strategy='median', add_indicator=True),
+                           SplineTransformer(n_knots=5, degree=3, knots='uniform', extrapolation='linear'), StandardScaler()),
+             make_column_selector(dtype_include='number')),
+            (OneHotEncoder(handle_unknown='ignore', min_frequency=20), make_column_selector(dtype_include=object)))
+        return make_pipeline(pre, LogisticRegression(C=C, max_iter=10000))
+    if kind in ('lrall_c001', 'lrall_c0003'):
+        from sklearn.compose import make_column_transformer, make_column_selector
+        from sklearn.impute import SimpleImputer
+        from sklearn.linear_model import LogisticRegression
+        from sklearn.pipeline import make_pipeline
+        from sklearn.preprocessing import OneHotEncoder, StandardScaler
+        pre = make_column_transformer(
+            (make_pipeline(SimpleImputer(strategy='median', add_indicator=True), StandardScaler()), make_column_selector(dtype_include='number')),
+            (OneHotEncoder(handle_unknown='ignore', min_frequency=20), make_column_selector(dtype_include=object)))
+        return make_pipeline(pre, LogisticRegression(C={'lrall_c001': 0.01, 'lrall_c0003': 0.003}[kind], max_iter=10000))
     if kind.startswith('lrall'):
         from sklearn.compose import make_column_transformer, make_column_selector
         from sklearn.impute import SimpleImputer
