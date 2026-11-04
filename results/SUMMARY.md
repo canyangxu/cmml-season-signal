@@ -152,3 +152,7 @@ selected (it would need private > 0.98191). Research stopped here.
   give byte-identical submissions (sha256 1a14bcec...), rank correlation 0.99996 with the submitted file.
 - Recorded for completeness: greedy weight search chose 3 RF : 1 CatBoost : 1 HGB_cat (selection 0.98853,
   confirmation 0.98843 vs 0.98861 for the declared weights; not adopted).
+
+**Final:** the retrained file `season_signal_v2_retrained.csv` (this repository's `src/` run end to end,
+sha256 1a14bcec...) scored **0.97303** on the public board, the best of all 15 submissions, and is the
+final submission (Kaggle auto-selects the best public score when none is ticked).

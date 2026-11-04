@@ -3,8 +3,10 @@
 Kaggle class competition (AIPI 520, Fall 2026): predict which orchestra patrons buy a 2014-15
 subscription. Metric: AUROC.
 
-**Final submission:** `season_signal_v2.csv`, public leaderboard **0.97283** (our best submission).
-Cross-validated AUROC **0.98847** on 25 selection folds and **0.98861** on 25 fresh confirmation folds.
+**Final submission:** `season_signal_v2_retrained.csv`, produced by running `src/` end to end, public
+leaderboard **0.97303** (our best of 15 submissions). The same recipe, first submitted as
+`season_signal_v2.csv`, scored 0.97283. Cross-validated AUROC **0.98847** on 25 selection folds and
+**0.98861** on 25 fresh confirmation folds.
 
 ## 1. Approach in one paragraph
 
@@ -75,7 +77,8 @@ counts in the table.
 
 | | public LB | CV (selection) |
 |---|---:|---:|
-| **season_signal_v2 (final)** | **0.97283** | 0.98847 |
+| **season_signal_v2_retrained (final, this repo end to end)** | **0.97303** | 0.98847 |
+| season_signal_v2 (same recipe, original run) | 0.97283 | 0.98847 |
 | earlier-project best (four-family blend) | 0.97279 | - |
 | spline GAM (smooth additive model) | 0.95809 | 0.98668 |
 
@@ -115,7 +118,8 @@ Verification (2026-11-04):
   the submitted `season_signal_v2.csv` byte for byte (sha256 `20a26de7...`).
 - A full retrain matches every tree and linear member of the original exactly. The CNN head
   initialisation was unseeded in the original run and is seeded now. Two retrains therefore give
-  identical files, with rank correlation 0.99996 to the submitted file.
+  identical files (sha256 `1a14bcec...`), with rank correlation 0.99996 to the first v2 file.
+  This retrained file is the final submission (public 0.97303).
 
 ## 8. Repository layout
 
