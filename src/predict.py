@@ -7,7 +7,7 @@
    same order as sample_submission.csv), compute test features with the same functions and write
    the submission.  Nothing computed on the test accounts flows back into any earlier step.
 
-    python -I src/predict.py [--model outputs/model] [--out submissions/season_signal_v2.csv]
+    python -I src/predict.py [--model outputs/model] [--out submissions/season_signal_v2_retrained.csv]
 """
 import argparse
 import hashlib
@@ -73,6 +73,6 @@ def main(model, out):
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('--model', default=str(ROOT/'outputs/model'))
-    p.add_argument('--out', default=str(ROOT/'submissions/season_signal_v2.csv'))
+    p.add_argument('--out', default=str(ROOT/'submissions/season_signal_v2_retrained.csv'))
     a = p.parse_args()
     main(Path(a.model), Path(a.out))

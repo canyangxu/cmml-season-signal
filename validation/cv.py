@@ -5,9 +5,12 @@ comparability) and fresh repeated stratified 5-fold splits.  Per outer fold:
   cnn_pre     - pretrained trunk fine-tuned, 3 seeds (inner early stopping only)
   cnn_scratch - same network from random initialisation, 3 seeds (ablation)
   lr, rf, hgb - reference models on a flat summary of the same signal + static
-Equal rank-mean ensembles are declared here, before any score is seen.
+The final ensemble is evaluated in validation/ensemble_cv.py.
 
-    python -I experiments/cv.py --scheme fixed42
+    python -I validation/cv.py --scheme fixed42      (needs outputs/pretrain from src/pretrain.py)
+
+Note: the CNN head initialisation is not seeded here (as in the recorded runs), so CNN fold scores
+vary slightly from run to run; the final model (src/ensemble.py) seeds it.
 """
 import argparse
 import json
@@ -32,10 +35,6 @@ from src.signal import CHANNELS, flat, signals, static  # noqa: E402
 
 OUT = ROOT/'outputs/cv'
 SEEDS = (0, 1, 2)
-ENSEMBLES = {'ens_cnn_lr_rf_hgb': ('cnn_pre', 'lr', 'rf', 'hgb'), 'ens_cnn_lr_rf': ('cnn_pre', 'lr', 'rf'),
-             'ens_lr_rf_hgb': ('lr', 'rf', 'hgb'),
-             # chosen on the 25 selection folds (fixed42, fixed2026, rep101-103); confirmed once on rep201-205
-             'ens_final': ('rf_t', 'rf_t', 'rf_t', 'cnn_pre', 'lr', 'hgb')}
 
 
 def folds(scheme, ids, y):
@@ -72,7 +71,7 @@ def run(scheme):
     st = stat.to_numpy()
     tab = flat(sig, stat)
     fold = folds(scheme, ids, y)
-    oof = {k: np.zeros(len(y)) for k in ('cnn_pre', 'cnn_scratch', 'lr', 'rf', 'rf_t', 'hgb')}
+    oof = {k: np.zeros(len(y)) for k in ('cnn_pre', 'cnn_scratch', 'lr', 'rf', 'hgb')}
     audit = []
     for f in range(1, 6):
         tr, va = np.where(fold != f)[0], np.where(fold == f)[0]
@@ -85,15 +84,11 @@ def run(scheme):
             oof[name][va] = np.mean(runs, axis=0)
         models = {'lr': make_pipeline(StandardScaler(), LogisticRegression(C=0.3, max_iter=5000)),
                   'rf': RandomForestClassifier(n_estimators=800, min_samples_leaf=3, max_features='sqrt', n_jobs=2, random_state=f),
-                  'rf_t': RandomForestClassifier(n_estimators=1500, min_samples_leaf=8, max_features=4, n_jobs=2, random_state=f),
                   'hgb': HistGradientBoostingClassifier(learning_rate=0.05, max_iter=300, max_leaf_nodes=15,
                                                         l2_regularization=1.0, random_state=f)}
         for name, m in models.items():
             oof[name][va] = m.fit(tab.iloc[tr], y[tr]).predict_proba(tab.iloc[va])[:, 1]
         print(scheme, f, {k: round(roc_auc_score(y[va], v[va]), 4) for k, v in oof.items()}, flush=True)
-    rank = lambda v: pd.Series(v).groupby(fold).rank(pct=True).to_numpy()
-    for name, members in ENSEMBLES.items():
-        oof[name] = np.mean([rank(oof[m]) for m in members], axis=0)
     res = {k: [roc_auc_score(y[fold == f], v[fold == f]) for f in range(1, 6)] for k, v in oof.items()}
     summary = {k: float(np.mean(v)) for k, v in res.items()}
     print(scheme, 'MEAN', {k: round(v, 5) for k, v in summary.items()}, flush=True)

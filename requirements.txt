@@ -1,13 +1,7 @@
-# Final pipeline (src/), tested with Python 3.12 on macOS (CPU only)
+# Python 3.12, CPU only
 numpy==2.2.6
 pandas==2.3.3
 scikit-learn==1.7.2
 scipy==1.16.3
 torch==2.7.1
 catboost==1.2.10
-
-# Only for some scripts in experiments/
-lightgbm==4.6.0
-xgboost==3.0.5
-interpret-core==0.7.8
-# tabpfn==2.2.1   (separate environment; experiments/iterate.py --variant tabpfn:base)
